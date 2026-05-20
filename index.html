@@ -462,6 +462,18 @@ h1 { font-size: 18px; margin: 0; font-weight: 600; }
       condicion ideal para vender vol structurada que se beneficia de mean-reversion del skew) &middot;
       NEUTRAL 20-80 &middot; ADVERSO &le; 20 (puts baratos, condicion adversa para vender vol).
     </div>
+    <div class="ev-callout" style="margin-top:14px;background:rgba(63,159,80,0.08);border-left:3px solid #3fb950;">
+      <strong>Por que percentil EXPANDING y no rolling 1Y o ventanas cortas.</strong>
+      Probado contra alternativas frente al PnL_d020 de Batman LT (N=46.111 trades, 1.614 dias):
+      <code>pct_expanding</code> da Spearman r=<strong>+0.27</strong>, FAV PF=<strong>11.2</strong>,
+      spread FAV-UNF=<strong>+25.4</strong> pts. El standard institucional CBOE-style
+      <code>pct_252</code> (1 ano) baja a r=+0.16, PF=8.4, spread=+13.0 &mdash; pierde ~40% del
+      signal. Ventanas mas cortas (3M, 1M) colapsan a r&lt;0.11 y la cohorte UNF deja de ser
+      perdedora (UNF mean queda en +6 a +7 con ventanas &lt;=1Y, vs &minus;3 con expanding) &mdash;
+      es decir, solo el percentil historico completo detecta el "UNF estructural" donde Batman LT
+      realmente pierde. El historico expanding gana en todas las dimensiones: r, PF, spread y
+      calidad del UNF.
+    </div>
   </div>
 
   <!-- 2. METODOLOGIA -->
