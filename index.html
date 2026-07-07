@@ -482,9 +482,9 @@ h1 { font-size: 18px; margin: 0; font-weight: 600; }
     <h2>Como se valida la relacion con Batman LT</h2>
     <p>
       Estrategia de validacion: <strong>Batman LT</strong> (46,118 trades 2019-2025, sin filtro SPX).
-      Es la misma estrategia y el mismo dataset que valida la pagina hermana de TENSION
-      (LIBERATION_SCORE_BATMAN_LT). Mantener un solo universo de validacion para ambas paginas
-      simplifica la comparacion entre scores.
+      Este es el dashboard de regimen canonico para Batman LT: la re-certificacion sobre el
+      sustrato Gen 3 (2026-07) confirmo PUT SKEW como el motor del regimen (la antigua pagina
+      hermana de TENSION quedo retirada al no aportar senal independiente sobre esta).
     </p>
     <p>
       Para cada horizonte d001 a d049 calculamos:
@@ -567,7 +567,7 @@ h1 { font-size: 18px; margin: 0; font-weight: 600; }
     <p>
       Misma logica que las bandas de la grafica del header. Aqui medimos el PnL medio (con CI95
       bootstrap) de los trades historicos cuando el score estaba en cada zona, en dos horizontes:
-      <strong>d020</strong> (canonico Batman LT, matches LIBERATION dashboard) y <strong>d050</strong>
+      <strong>d020</strong> (horizonte canonico Batman LT) y <strong>d050</strong>
       (mid-life del trade).
     </p>
     <img src="evidence/put_skew_regime_pnl.png" alt="PnL por regimen" loading="lazy">
