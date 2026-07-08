@@ -52,6 +52,14 @@ SIDE = "PUT"
 PCT_COL = "skew_25d_vs50_pct_expanding"
 RAW_COL = "skew_25d_vs50"
 
+# SUAVIZADO EMA (2026-07-08, decision usuario). El dial publicado deja de ser el
+# pct crudo pre-calculado y pasa a ser el percentil expanding del skew RAW pasado
+# por EMA CAUSAL (solo-pasado). Validado: r_day 0.562->0.571 (no sig, seguro),
+# whipsaw 39->2 reversiones; quita los falsos-neutrales (outliers que probamos
+# pertenecian a su familia). El raw sin suavizar se conserva en 'raw'; zonas,
+# umbrales, layout y textos intactos. Poner SMOOTH_SPAN=0 revierte a crudo.
+SMOOTH_SPAN = 10
+
 # Standard bands (Batman LT convention).
 # IMPORTANT: BWB usa banda invertida. Esta info se documenta en index.html
 # (Seccion 1 Concepto + Seccion 8 Cross-strategy). Aqui solo publicamos el
@@ -98,6 +106,8 @@ def build_data_payload() -> dict:
     ].copy()
 
     df["trade_date"] = pd.to_datetime(df["trade_date"], errors="coerce")
+    # Mismo conjunto de dias que la version cruda (dropna sobre PCT_COL): solo
+    # cambia la CURVA (pct suavizado), no el rango de fechas ni n_days.
     df = df.dropna(subset=["trade_date", PCT_COL]).copy()
     df["trade_date"] = df["trade_date"].dt.strftime("%Y-%m-%d")
     df = df.sort_values("trade_date").drop_duplicates("trade_date", keep="last").reset_index(drop=True)
@@ -105,7 +115,18 @@ def build_data_payload() -> dict:
     if df.empty:
         raise RuntimeError("No valid rows in SKEW_PUT_ENRICHED after filtering")
 
-    last_v = float(df[PCT_COL].iloc[-1])
+    # --- SEnAL SUAVIZADA: percentil expanding del skew RAW pasado por EMA causal.
+    #     Si SMOOTH_SPAN==0 -> usa el pct crudo pre-calculado (revert exacto). ---
+    if SMOOTH_SPAN and SMOOTH_SPAN > 0:
+        raw_s = pd.to_numeric(df[RAW_COL], errors="coerce")
+        ema = raw_s.ewm(span=SMOOTH_SPAN, adjust=False).mean()
+        pct_series = ema.expanding(min_periods=1).rank(pct=True) * 100.0
+        pct_series = pct_series.round(2)
+    else:
+        pct_series = pd.to_numeric(df[PCT_COL], errors="coerce")
+    df["_pct_pub"] = pct_series.values
+
+    last_v = float(df["_pct_pub"].iloc[-1])
     last_raw = float(df[RAW_COL].iloc[-1]) if pd.notna(df[RAW_COL].iloc[-1]) else None
     last_date = str(df["trade_date"].iloc[-1])
 
@@ -118,6 +139,8 @@ def build_data_payload() -> dict:
             "side": SIDE,
         },
         "n_days": int(len(df)),
+        "smoothing": (f"EMA{SMOOTH_SPAN} causal sobre skew raw -> percentil expanding"
+                      if SMOOTH_SPAN and SMOOTH_SPAN > 0 else "ninguno (pct crudo)"),
         "thresholds": {"favorable_min": FAV_MIN, "adverso_max": ADV_MAX},
         "latest": {
             "date": last_date,
@@ -126,7 +149,7 @@ def build_data_payload() -> dict:
             "regime": regime_label(last_v),
         },
         "dates": df["trade_date"].tolist(),
-        "pct": [_round_or_none(v) for v in df[PCT_COL]],
+        "pct": [_round_or_none(v) for v in df["_pct_pub"]],
         "raw": [_round_or_none(v, 4) for v in df[RAW_COL]],
     }
 
